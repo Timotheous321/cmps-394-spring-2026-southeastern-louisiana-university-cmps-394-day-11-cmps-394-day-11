@@ -1,0 +1,35 @@
+name: Backend Docker Build
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Build backend image
+        run: docker build -t lab-backend ./backend
+
+      - name: Run backend container
+        run: docker run -d --name backend-test -p 8080:8080 lab-backend
+
+      - name: Verify backend response
+        run: |
+          sleep 5
+          curl --fail http://localhost:8080 | grep "Hello, World from Go backend!"
+
+      - name: Show backend logs if something failed
+        if: failure()
+        run: docker logs backend-test
+
+      - name: Stop and remove backend container
+        if: always()
+        run: docker rm -f backend-test

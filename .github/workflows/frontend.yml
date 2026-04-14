@@ -1,0 +1,35 @@
+name: Frontend Docker Build
+
+on:
+  push:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Build frontend image
+        run: docker build -t lab-frontend ./frontend
+
+      - name: Run frontend container
+        run: docker run -d --name frontend-test -p 8081:80 lab-frontend
+
+      - name: Verify frontend response
+        run: |
+          sleep 5
+          curl --fail http://localhost:8081 | grep "Hello from the frontend!"
+
+      - name: Show frontend logs if something failed
+        if: failure()
+        run: docker logs frontend-test
+
+      - name: Stop and remove frontend container
+        if: always()
+        run: docker rm -f frontend-test
